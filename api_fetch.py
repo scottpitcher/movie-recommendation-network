@@ -1,5 +1,9 @@
 import requests
 import pandas as pd
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def fetch_movies(api_key, language="en-US", page=1):
     """
@@ -28,14 +32,18 @@ def fetch_movies(api_key, language="en-US", page=1):
     
     # Parse JSON data
     data = response.json()
-    
+    print(f'The possible columns to choose from:\n {data["results"][0].keys()}\n')
+
     # Extract relevant fields from results
     movies = [
         {
             "id": movie["id"],
             "title": movie["title"],
+            "overview":movie["overview"],
+            "popularity":movie["popularity"],
             "release_date": movie["release_date"],
             "vote_average": movie["vote_average"],
+            "vote_count": movie["vote_count"],
             "genre_ids": movie["genre_ids"]  # Genre IDs (can map to actual genre names later)
         }
         for movie in data["results"]
@@ -44,8 +52,40 @@ def fetch_movies(api_key, language="en-US", page=1):
     # Convert to pandas DataFrame
     return pd.DataFrame(movies)
 
-# Example usage:
+def fetch_genres():
+    """
+    Fetch genre IDs and their corresponding names from TMDb.
+    
+    Returns:
+    - dict: A dictionary mapping genre IDs to genre names.
+    """
+    url = "https://api.themoviedb.org/3/genre/movie/list?language=en"
+    
+    # Add your Bearer token here
+    headers = {
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIyZjliMGMwNTZiOWMxMGM0YTVjMTJiNmI2MjBjZDEyZCIsIm5iZiI6MTczMTk0OTE3Mi4zMjIzMzA3LCJzdWIiOiI2NzNhMTY3NTJjMGI3ZmQyMDM0YTk4NzAiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.-CpSsrjp68cZy7DJamUx4sah_oQj7aFlL4qXkTSbfeM",
+        "accept": "application/json"
+    }
+    
+    # Make the API request
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()  # Raise an error if the request fails
+    
+    # Parse the JSON response
+    genres = response.json().get("genres", [])
+    
+    # Convert to a dictionary for easy lookup
+    genre_mapping = {genre["id"]: genre["name"] for genre in genres}
+    
+    return genre_mapping
+
+
 if __name__ == "__main__":
-    API_KEY = "your_api_key_here"  # Replace with your actual TMDb API key
+    API_KEY = os.getenv("API_KEY")
     dataset = fetch_movies(API_KEY)
+    GENRE_MAPPING = fetch_genres()
+    dataset['genres'] = dataset['genre_ids'].apply(lambda ids: [GENRE_MAPPING.get(genre) for genre in ids])
     print(dataset.head())
+    dataset.to_csv('data/full_data.csv')
+
+
