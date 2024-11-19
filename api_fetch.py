@@ -1,18 +1,18 @@
+# api_fetch.py
 import requests
 import pandas as pd
 import os
 from dotenv import load_dotenv
-
 load_dotenv()
 
-def fetch_movies(api_key, language="en-US", page=1):
+def fetch_movies(api_key, language="en-US", total_pages=100):
     """
     Fetch popular movies from TMDb and return them as a pandas DataFrame.
     
     Parameters:
     - api_key (str): Your TMDb API key.
     - language (str): Language for the movie data (default: "en-US").
-    - page (int): Page number for paginated results (default: 1).
+    - total_pages (int): Number of pages to fetch (default: 5).
     
     Returns:
     - pd.DataFrame: DataFrame containing movie details.
@@ -20,37 +20,37 @@ def fetch_movies(api_key, language="en-US", page=1):
     BASE_URL = "https://api.themoviedb.org/3"
     endpoint = f"{BASE_URL}/movie/popular"
     
-    params = {
-        "api_key": api_key,
-        "language": language,
-        "page": page
-    }
+    all_movies = []
     
-    # Make the API request
-    response = requests.get(endpoint, params=params)
-    response.raise_for_status()  # Raise an error for bad responses (e.g., 401, 404)
-    
-    # Parse JSON data
-    data = response.json()
-    print(f'The possible columns to choose from:\n {data["results"][0].keys()}\n')
-
-    # Extract relevant fields from results
-    movies = [
-        {
-            "id": movie["id"],
-            "title": movie["title"],
-            "overview":movie["overview"],
-            "popularity":movie["popularity"],
-            "release_date": movie["release_date"],
-            "vote_average": movie["vote_average"],
-            "vote_count": movie["vote_count"],
-            "genre_ids": movie["genre_ids"]  # Genre IDs (can map to actual genre names later)
+    for page in range(1, total_pages + 1):
+        params = {
+            "api_key": api_key,
+            "language": language,
+            "page": page
         }
-        for movie in data["results"]
-    ]
+        
+        response = requests.get(endpoint, params=params)
+        response.raise_for_status()
+        data = response.json()
+        print(f'Fetching page {page}: {len(data["results"])} movies')
+        
+        movies = [
+            {
+                "id": movie["id"],
+                "title": movie["title"],
+                "overview": movie["overview"],
+                "popularity": movie["popularity"],
+                "release_date": movie["release_date"],
+                "vote_average": movie["vote_average"],
+                "vote_count": movie["vote_count"],
+                "genre_ids": movie["genre_ids"]
+            }
+            for movie in data["results"]
+        ]
+        all_movies.extend(movies)
     
-    # Convert to pandas DataFrame
-    return pd.DataFrame(movies)
+    return pd.DataFrame(all_movies)
+
 
 def fetch_genres():
     """
