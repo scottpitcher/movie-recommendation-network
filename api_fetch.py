@@ -87,5 +87,3 @@ if __name__ == "__main__":
     dataset['genres'] = dataset['genre_ids'].apply(lambda ids: [GENRE_MAPPING.get(genre) for genre in ids])
     print(dataset.head())
     dataset.to_csv('data/full_data.csv')
-
-
