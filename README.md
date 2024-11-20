@@ -13,7 +13,7 @@ Personal project more for learning than portfolio
 - Create nodes for entities (Movies, Genres), and relationships (Movies → Genres, Movies → Release Year, Movies → Popularity Scores).
 - Utilize Cypher queries to ensure proper ingestion of relational data.
 
-#### Stage 3: Feature Engineering (Current Stage)
+#### Stage 3: Feature Engineering ✅
 - Utilize Cypher queries to extract features:
   - **Shared Genres:** Number of genres shared between input movies and candidate movies.
   - **Shared Actors/Directors:** Connections between movies via shared cast/crew.
@@ -23,7 +23,7 @@ Personal project more for learning than portfolio
 - Export graph-based features from Neo4j to a pandas DataFrame.
 - Label movies as recommended (`1`) or not recommended (`0`).
 
-#### Stage 4: GNN-Based Recommendation Model Development
+#### Stage 4: GNN-Based Recommendation Model Development (Current Stage)
 - **Graph Construction for GNN:**
   - Export nodes, edges, and adjacency matrices from Neo4j to build a graph for GNN training.
   - Use graph-based features as node attributes (e.g., popularity_bin, PageRank).
