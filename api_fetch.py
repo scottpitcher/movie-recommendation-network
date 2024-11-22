@@ -75,7 +75,7 @@ def fetch_movie_credits(api_key, movie_id):
     data = response.json()
     
     # Extract top 5 actors
-    actors = [cast["name"] for cast in data.get("cast", [])[:5]]
+    actors = [cast["name"] for cast in data.get("cast", [])[:10]]
     
     # Extract director
     directors = [crew["name"] for crew in data.get("crew", []) if crew["job"] == "Director"]
