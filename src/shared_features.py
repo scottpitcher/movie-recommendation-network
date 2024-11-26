@@ -89,7 +89,7 @@ try:
         shared_matrix[i, j, 2] = row["shared_directors"]
 
     # Save the shared matrix
-    output_file = "data/training_data/shared_matrix.npy"
+    output_file = "data/processed_data/shared_matrix.npy"
     np.save(output_file, shared_matrix)
     logging.info(f"Saved shared matrix to {output_file}")
 

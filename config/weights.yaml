@@ -1,0 +1,6 @@
+match_score_weights:
+  normalized_shared_genres: 0.4
+  normalized_shared_actors: 0.1
+  normalized_shared_directors: 0.2
+  normalized_CandidateMovie_vote_count: 0.1
+  normalized_CandidateMovie_log_popularity: 0.1

@@ -3,3 +3,6 @@
 
 # Ignore the .env file for API keys, etc.
 .env
+
+# Ignore the training data (for storage)
+data/training_data/*

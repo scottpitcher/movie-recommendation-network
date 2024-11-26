@@ -14,9 +14,10 @@ movie-recommendation-network/
 │
 ├── scripts/                       # Pipeline scripts for automation
 │   ├── api_fetch.py               # Fetch raw data from TMDB -> raw_data/full_data_with_credits.csv
-│   ├── data_preprocessing.py      # Process raw data -> processed_data/full_data_binned_log.csv
+│   ├── data_preprocessing.py      # Preprocess raw data -> processed_data/full_data_binned_log.csv
 │   ├── data_ingestion.py          # Ingest processed data into Neo4j -> Prepares graph DB
-│   ├── shared_features.py         # Generate shared feature matrix from Neo4j -> training_data/shared_matrix.npy
+│   ├── shared_features.py         # Generate shared feature matrix from Neo4j -> processed_data/shared_matrix.npy
+│   ├── data_processing.py         # Process final dataset for model training -> training_data/final_processed_data.csv
 │   ├── feature_engineering.py     # Prepare final feature set for model input
 │   ├── model_architecture.py      # Define PyTorch model architecture
 │   ├── model_training.py          # Train model on generated feature sets

@@ -1,4 +1,5 @@
 # data_processing.py
+print("Importing packages...")
 import os
 import gc
 import logging
@@ -6,7 +7,7 @@ import numpy as np
 import pandas as pd
 from pyspark.sql import SparkSession
 from pyspark.sql.types import StructType, StructField, IntegerType, DoubleType
-from pyspark.sql.functions import min, max, col
+from pyspark.sql.functions import min, max, col, expr
 from dotenv import load_dotenv
 
 # Set up logging
@@ -25,8 +26,23 @@ def setup_spark():
         .config("spark.master", "local[*]") \
         .getOrCreate()
     logging.info("Spark session initialized.")
+
     return spark
 
+
+def load_weights():
+    """Load weights from YAML configuration."""
+    try:
+        logging.info("Loading weights from config/weights.yaml...")
+        with open("config/weights.yaml", "r") as file:
+            config = yaml.safe_load(file)
+        weights = config["match_score_weights"]
+        logging.info(f"Weights loaded successfully: {weights}")
+        return weights
+    except Exception as e:
+        logging.error(f"Failed to load weights: {e}", exc_info=True)
+        raise e
+    
 def load_data():
     """Load data from CSV and prepare initial DataFrame."""
     logging.info("Loading data...")
@@ -38,7 +54,7 @@ def load_data():
 def load_shared_matrix():
     """Load shared features matrix."""
     logging.info("Loading shared matrix...")
-    shared_features = np.load("data/shared_matrix.npy").astype(float)
+    shared_features = np.load("data/processed_data/shared_matrix.npy").astype(float)
     logging.info(f"Shared matrix of shape {shared_features.shape} loaded.")
     return shared_features
 
@@ -98,11 +114,11 @@ def join_dataframes(pairwise_df, movie_df):
 
     # Select the columns needed
     merged_df = merged_df.select(
-        "InputMovie_id", "InputMovie_title", "InputMovie_popularity", "InputMovie_vote_average","InputMovie_vote_count",
-        "CandidateMovie_id", "CandidateMovie_title", "CandidateMovie_popularity", "CandidateMovie_vote_average", "CandidateMovie_vote_count",
-        "shared_genres", "shared_actors", "shared_directors"
+        "InputMovie_id", "InputMovie_title", "InputMovie_popularity","InputMovie_log_popularity", "InputMovie_vote_average", "InputMovie_vote_count",
+        "CandidateMovie_id", "CandidateMovie_title", "CandidateMovie_log_popularity", "CandidateMovie_vote_average", "CandidateMovie_vote_count",
+        "CandidateMovie_degree", "shared_genres", "shared_actors", "shared_directors"
     ).repartition(200)
-    
+
     logging.info("DataFrames joined successfully.")
     return merged_df
 
@@ -119,9 +135,20 @@ def normalize_features(merged_df, variables_to_normalize):
         logging.info(f"Normalized {variable} into {normalized_column}.")
     return merged_df
 
+def calculate_match_score(merged_df, weights):
+    """Calculate match_score based on weighted features."""
+    logging.info("Calculating match scores...")
+    match_score_expr = " + ".join(
+        [f"{weight} * {col}" for col, weight in weights.items()]
+    )
+    merged_df = merged_df.withColumn("match_score", expr(match_score_expr))
+    logging.info("Match scores calculated successfully.")
+    return merged_df
+
 if __name__ == "__main__":
     try:
         spark = setup_spark()
+        weights = load_weights()
         movie_df = load_data()
         shared_features = load_shared_matrix()
         pairwise_df = create_pairwise_df(shared_features, movie_df)
@@ -129,17 +156,27 @@ if __name__ == "__main__":
         # Join data and normalize
         merged_df = join_dataframes(pairwise_df, movie_df)
         variables_to_normalize = [
-            "CandidateMovie_popularity",
+            "CandidateMovie_log_popularity",
             "CandidateMovie_vote_count",
             "shared_genres",
             "shared_actors",
             "shared_directors"
         ]
         merged_df = normalize_features(merged_df, variables_to_normalize)
+        
+        # Add match_score column
+        merged_df = calculate_match_score(merged_df)
 
         # Save or inspect the final DataFrame
-        logging.info("Data processing completed.")
-        merged_df.show()
+        logging.info("Data processing completed.")        
+        output_path = "data/training_data/final_processed_data.csv"
+        # Ensure the folder exists
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        
+        # Save the DataFrame as CSV
+        logging.info(f"Saving final dataset to {output_path}...")
+        merged_df.coalesce(1).write.csv(output_path, header=True, mode="overwrite")
+        logging.info("Final dataset saved successfully!")
 
     except Exception as e:
         logging.error(f"An error occurred: {e}", exc_info=True)
