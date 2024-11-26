@@ -71,11 +71,11 @@ def fetch_movie_credits(api_key, movie_id):
     if response.status_code != 200:
         print(f"Failed to fetch credits for movie ID {movie_id}: {response.status_code}")
         return {"actors": [], "director": None}
-    
+
     data = response.json()
     
     # Extract top 5 actors
-    actors = [cast["name"] for cast in data.get("cast", [])[:10]]
+    actors = [cast["name"] for cast in data.get("cast", [])[:15]]
     
     # Extract director
     directors = [crew["name"] for crew in data.get("crew", []) if crew["job"] == "Director"]
@@ -116,7 +116,7 @@ if __name__ == "__main__":
     API_KEY = os.getenv("API_KEY")
     
     # Fetch movies
-    dataset = fetch_movies(API_KEY, total_pages=100)
+    dataset = fetch_movies(API_KEY, total_pages=200)
     
     # Fetch genres
     GENRE_MAPPING = fetch_genres()
