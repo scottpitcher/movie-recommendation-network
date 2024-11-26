@@ -1,5 +1,5 @@
 #!/bin/bash
-# This script can be run in terminal whenever the venv fails
+# This script can be run in terminal whenever the venv fails/dies
 
 # Remove existing virtual environment
 rm -rf .venv

@@ -1,90 +1,112 @@
-# shared_features.py
-print("Importing packages...")
+import logging
 from py2neo import Graph, Node, Relationship
 from dotenv import load_dotenv
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import os
 from tqdm import tqdm
-from pyspark.sql import SparkSession
-print("Completed!")
 
-# Load movie IDs and initialize matrix
-df = pd.read_csv("data/full_data_binned_log.csv")  # Replace with your dataset path
-movie_ids = df["id"].tolist()  # Assuming `df` contains the list of all movie IDs
-n = len(movie_ids)
+log_dir = os.path.join(os.getcwd(), "logs")
 
-# Initialize a 3D matrix of shape (n, n, 3)
-shared_matrix = np.zeros((n, n, 3))
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler(os.path.join(log_dir, "shared_features.log")),  # Save log to logs directory
+        logging.StreamHandler()  # Also print logs to console
+    ]
+)
+logging.info("Starting shared_features.py")
 
-# Create a mapping from movie ID to index
-movie_index = {movie_id: idx for idx, movie_id in enumerate(movie_ids)}
+try:
+    # Load the environment variables
+    load_dotenv()
+    NEO4J_URL = os.getenv("NEO4J_URL")
+    NEO4J_USERNAME = os.getenv("NEO4J_USERNAME", "neo4j")
+    NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD")
 
-# Connect to Neo4j
-graph = Graph("bolt://localhost:7689", auth=("neo4j", "password"))
+    logging.info("Loaded environment variables successfully")
 
-print("Initialized 3D shared matrix of shape:", shared_matrix.shape)
+    # Connect to Neo4j
+    graph = Graph(NEO4J_URL, auth=(NEO4J_USERNAME, NEO4J_PASSWORD))
+    logging.info("Connected to Neo4j successfully")
 
-# Shared Genres
-print("\nCalculating shared genres...")
-query_shared_genres = """
-MATCH (m1:Movie)-[:BELONGS_TO]->(g:Genre)<-[:BELONGS_TO]-(m2:Movie)
-WHERE m1 <> m2
-RETURN m1.id AS movie1_id, m2.id AS movie2_id, COUNT(g) AS shared_genres
-"""
-shared_genres = graph.run(query_shared_genres).to_data_frame()
+    # Load movie IDs
+    df = pd.read_csv("data/processed_data/full_data_binned_log.csv")
+    movie_ids = df["id"].tolist()
+    n = len(movie_ids)
+    logging.info(f"Loaded {n} movie IDs from dataset")
 
-print(f"Processing {len(shared_genres)} shared genre relationships...")
-for _, row in tqdm(shared_genres.iterrows(), total=len(shared_genres), desc="Shared Genres"):
-    i = movie_index[row["movie1_id"]]
-    j = movie_index[row["movie2_id"]]
-    shared_matrix[i, j, 0] = row["shared_genres"]  # Assign to the first layer
+    # Initialize shared features matrix
+    shared_matrix = np.zeros((n, n, 3))
+    movie_index = {movie_id: idx for idx, movie_id in enumerate(movie_ids)}
+    logging.info("Initialized shared matrix with shape %s", shared_matrix.shape)
 
-# Shared Actors
-print("\nCalculating shared actors...")
-query_shared_actors = """
-MATCH (m1:Movie)-[:ACTED_IN]-(a:Actor)-[:ACTED_IN]-(m2:Movie)
-WHERE m1 <> m2
-RETURN m1.id AS movie1_id, m2.id AS movie2_id, COUNT(a) AS shared_actors
-"""
-shared_actors = graph.run(query_shared_actors).to_data_frame()
+    # Calculate shared genres
+    logging.info("Starting shared genres computation")
+    query_shared_genres = """
+    MATCH (m1:Movie)-[:BELONGS_TO]->(g:Genre)<-[:BELONGS_TO]-(m2:Movie)
+    WHERE m1 <> m2
+    RETURN m1.id AS movie1_id, m2.id AS movie2_id, COUNT(g) AS shared_genres
+    """
+    shared_genres = graph.run(query_shared_genres).to_data_frame()
+    logging.info(f"Retrieved {len(shared_genres)} shared genres relationships")
 
-print(f"Processing {len(shared_actors)} shared actor relationships...")
-for _, row in tqdm(shared_actors.iterrows(), total=len(shared_actors), desc="Shared Actors"):
-    i = movie_index[row["movie1_id"]]
-    j = movie_index[row["movie2_id"]]
-    shared_matrix[i, j, 1] = row["shared_actors"]  # Assign to the second layer
+    for _, row in tqdm(shared_genres.iterrows(), total=len(shared_genres), desc="Shared Genres"):
+        i = movie_index[row["movie1_id"]]
+        j = movie_index[row["movie2_id"]]
+        shared_matrix[i, j, 0] = row["shared_genres"]
 
-# Shared Directors
-print("\nCalculating shared directors...")
-query_shared_directors = """
-MATCH (m1:Movie)-[:DIRECTED]-(d:Director)-[:DIRECTED]-(m2:Movie)
-WHERE m1 <> m2
-RETURN m1.id AS movie1_id, m2.id AS movie2_id, COUNT(d) AS shared_directors
-"""
-shared_directors = graph.run(query_shared_directors).to_data_frame()
+    # Calculate shared actors
+    logging.info("Starting shared actors computation")
+    query_shared_actors = """
+    MATCH (m1:Movie)-[:ACTED_IN]-(a:Actor)-[:ACTED_IN]-(m2:Movie)
+    WHERE m1 <> m2
+    RETURN m1.id AS movie1_id, m2.id AS movie2_id, COUNT(a) AS shared_actors
+    """
+    shared_actors = graph.run(query_shared_actors).to_data_frame()
+    logging.info(f"Retrieved {len(shared_actors)} shared actors relationships")
 
-print(f"Processing {len(shared_directors)} shared director relationships...")
-for _, row in tqdm(shared_directors.iterrows(), total=len(shared_directors), desc="Shared Directors"):
-    i = movie_index[row["movie1_id"]]
-    j = movie_index[row["movie2_id"]]
-    shared_matrix[i, j, 2] = row["shared_directors"]  # Assign to the third layer
+    for _, row in tqdm(shared_actors.iterrows(), total=len(shared_actors), desc="Shared Actors"):
+        i = movie_index[row["movie1_id"]]
+        j = movie_index[row["movie2_id"]]
+        shared_matrix[i, j, 1] = row["shared_actors"]
 
-# Save the matrix
-output_file = "data/shared_matrix.npy"
-np.save(output_file, shared_matrix)
-print(f"\nShared matrix of shape {shared_matrix.shape} saved to '{output_file}'")
+    # Calculate shared directors
+    logging.info("Starting shared directors computation")
+    query_shared_directors = """
+    MATCH (m1:Movie)-[:DIRECTED]-(d:Director)-[:DIRECTED]-(m2:Movie)
+    WHERE m1 <> m2
+    RETURN m1.id AS movie1_id, m2.id AS movie2_id, COUNT(d) AS shared_directors
+    """
+    shared_directors = graph.run(query_shared_directors).to_data_frame()
+    logging.info(f"Retrieved {len(shared_directors)} shared directors relationships")
 
-query_node_degree = """
-MATCH (m:Movie)
-RETURN m.id AS id, size([(m)--() | 1]) AS degree
-"""
-# Execute the query and convert the results to a DataFrame
-node_degree = graph.run(query_node_degree).to_data_frame()
-print(node_degree.degree.value_counts().sort_index(ascending=True))
+    for _, row in tqdm(shared_directors.iterrows(), total=len(shared_directors), desc="Shared Directors"):
+        i = movie_index[row["movie1_id"]]
+        j = movie_index[row["movie2_id"]]
+        shared_matrix[i, j, 2] = row["shared_directors"]
 
-node_df = pd.merge(df, node_degree, on = "id", how = 'left')
-node_df.head()
+    # Save the shared matrix
+    output_file = "data/training_data/shared_matrix.npy"
+    np.save(output_file, shared_matrix)
+    logging.info(f"Saved shared matrix to {output_file}")
 
-node_df.to_csv("data/full_data_nodes.csv")
+    # Calculate node degrees
+    logging.info("Calculating node degrees")
+    query_node_degree = """
+    MATCH (m:Movie)
+    RETURN m.id AS id, size([(m)--() | 1]) AS degree
+    """
+    node_degree = graph.run(query_node_degree).to_data_frame()
+    node_df = pd.merge(df, node_degree, on="id", how="left")
+    logging.info("Node degree calculation completed")
+
+    node_df.to_csv("data/processed_data/full_data_nodes.csv", index=False)
+    logging.info("Saved node data to 'data/full_data_nodes.csv'")
+
+except Exception as e:
+    logging.error("An error occurred: %s", e, exc_info=True)
+finally:
+    logging.info("shared_features.py script completed")
