@@ -21,7 +21,7 @@ Personal project more for learning than portfolio
     - **Node Degree:** Number of direct relationships a movie has.
     - **PageRank:** Importance of movies in the graph structure.
 - Export graph-based features from Neo4j to a pandas DataFrame.
-- Label movies as recommended (`1`) or not recommended (`0`).
+- Label movies with a match score (0-1) for pairwise combinations.
 
 #### Stage 4: GNN-Based Recommendation Model Development (Current Stage)
 - **Graph Construction for GNN:**
