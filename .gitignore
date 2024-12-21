@@ -9,3 +9,6 @@ data/*
 
 # Ignore node modules
 node_modules/*
+
+# Ignore the model
+models/*
