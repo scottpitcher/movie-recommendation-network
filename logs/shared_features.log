@@ -1,0 +1,26 @@
+2024-11-26 13:19:13,279 - INFO - Starting shared_features.py
+2024-11-26 13:19:13,280 - INFO - Loaded environment variables successfully
+2024-11-26 13:19:13,645 - INFO - Connected to Neo4j successfully
+2024-11-26 13:19:13,667 - INFO - Loaded 2000 movie IDs from dataset
+2024-11-26 13:19:13,667 - INFO - Initialized shared matrix with shape (2000, 2000, 3)
+2024-11-26 13:19:13,668 - INFO - Starting shared genres computation
+2024-11-26 13:19:30,693 - INFO - Retrieved 1461076 shared genres relationships
+2024-11-26 13:19:30,737 - ERROR - An error occurred: np.int64(522402)
+Traceback (most recent call last):
+  File "/Users/scottpitcher/Desktop/python/Github/movie-recommendation-network/src/shared_features.py", line 57, in <module>
+    i = movie_index[row["movie1_id"]]
+KeyError: np.int64(522402)
+2024-11-26 13:19:30,738 - INFO - shared_features.py script completed
+2024-11-26 13:58:10,459 - INFO - Starting shared_features.py
+2024-11-26 13:58:11,034 - INFO - Loaded environment variables successfully
+2024-11-26 13:58:11,421 - INFO - Connected to Neo4j successfully
+2024-11-26 13:58:11,466 - INFO - Loaded 2000 movie IDs from dataset
+2024-11-26 13:58:11,466 - INFO - Initialized shared matrix with shape (2000, 2000, 3)
+2024-11-26 13:58:11,466 - INFO - Starting shared genres computation
+2024-11-26 13:58:25,301 - INFO - Retrieved 1461076 shared genres relationships
+2024-11-26 13:58:25,315 - ERROR - An error occurred: np.int64(522402)
+Traceback (most recent call last):
+  File "/Users/scottpitcher/Desktop/python/Github/movie-recommendation-network/src/shared_features.py", line 57, in <module>
+    i = movie_index[row["movie1_id"]]
+KeyError: np.int64(522402)
+2024-11-26 13:58:25,316 - INFO - shared_features.py script completed

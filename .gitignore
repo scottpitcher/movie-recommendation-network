@@ -1,0 +1,11 @@
+# Ignore the virtual environment
+.venv/*
+
+# Ignore the .env file for API keys, etc.
+.env
+
+# Ignore the data (for storage)
+data/*
+
+# Ignore node modules
+node_modules/*
