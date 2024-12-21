@@ -1,0 +1,19 @@
+# Ignore Python cache files and directories
+__pycache__/
+*.py[cod]
+
+# Ignore virtual environment
+.venv/
+
+# Ignore logs and temporary files
+logs/
+*.log
+*.tmp
+
+# Ignore sensitive files
+.env
+run_docker.sh
+
+# Ignore data and test folders if not needed
+data/
+tests/
