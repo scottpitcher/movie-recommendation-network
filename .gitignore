@@ -12,3 +12,8 @@ node_modules/*
 
 # Ignore the model
 models/*
+
+
+# Ignore misc. files
+package-lock.json
+run_docker.sh
