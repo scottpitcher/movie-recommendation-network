@@ -13,3 +13,4 @@ gcloud run deploy movie-recommendation-api \
   --platform managed \
   --region us-central1 \
   --allow-unauthenticated
+  --memory 3Gi  # Adjust as needed
