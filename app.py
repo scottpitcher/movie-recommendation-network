@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -11,6 +12,16 @@ from fastapi import Request
 # Initialize FastAPI app
 app = FastAPI()
 
+# Enable CORS (allow requests from your portfolio site)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://scottpitcher.github.io"],  # Replace with your actual domain
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all methods
+    allow_headers=["*"],  # Allow all headers
+)
+
+
 # Load the model
 model_path = "models/movie_ranking_model.pt"
 movie_feature_dim = 2  # Number of movie-level features
@@ -22,8 +33,8 @@ model.load_state_dict(torch.load(model_path))
 model.eval()
 
 # Load the preprocessed data
-input_movie_dropdown = pd.read_csv("data/processed_data/input_movie_dropdown.csv")
-candidate_movie_data = pd.read_csv("data/processed_data/candidate_movie_data.csv")
+input_movie_dropdown = pd.read_csv("data/deployment_data/input_movie_dropdown.csv")
+candidate_movie_data = pd.read_csv("data/deployment_data/candidate_movie_data.csv")
 
 # Set up Jinja2 templates for rendering HTML
 templates = Jinja2Templates(directory="templates")
@@ -38,10 +49,19 @@ def get_movie_page(request: Request):
     movie_titles = input_movie_dropdown['InputMovie_title'].tolist()
     return templates.TemplateResponse("index.html", {"request": request, "movie_titles": movie_titles})
 
+@app.get("/test")
+def test_route():
+    return {"message": "FastAPI is working!"}
+
+
 @app.get("/dropdown")
 def get_input_movie_dropdown():
-    # Return the dropdown data (Input Movie Titles)
-    return {"movies": input_movie_dropdown.to_dict(orient="records")}
+    try:
+        # Return the dropdown data (Input Movie Titles)
+        return {"movies": input_movie_dropdown.to_dict(orient="records")}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/recommend")
 def recommend(request: RecommendationRequest):
@@ -94,4 +114,3 @@ def recommend(request: RecommendationRequest):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
