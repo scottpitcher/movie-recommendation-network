@@ -15,4 +15,7 @@ logs/
 run_docker.sh
 
 # Ignore data and test folders if not needed
-data/process
+data/processed_data/*
+data/raw_data/*
+data/training_data/*
+tests/
